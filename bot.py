@@ -118,7 +118,7 @@ Men zamonaviy video yuklovchi botman! 🚀
 /help - Yordam
 /stats - Statistika
 
-👨‍💻 *Yaratuvchi:* @YourUsername
+👨‍💻 *Yaratuvchi:* @Abdulboriy7700
 🆔 *Bot versiyasi:* 2.0 Pro
 """
     
@@ -133,7 +133,7 @@ Men zamonaviy video yuklovchi botman! 🚀
             InlineKeyboardButton("ℹ️ Bot haqida", callback_data="about")
         ],
         [
-            InlineKeyboardButton("👨‍💻 Yaratuvchi", url="https://t.me/YourUsername")
+            InlineKeyboardButton("👨‍💻 Yaratuvchi", url="https://t.me/Abdulboriy7700")
         ]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
@@ -183,7 +183,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 • Agar xatolik bo'lsa, qayta urinib ko'ring
 
 🆘 *Muammo bo'lsa:*
-Boshqa havola bilan urinib ko'ring yoki @YourUsername ga murojaat qiling
+Boshqa havola bilan urinib ko'ring yoki @Abdulboriy7700 ga murojaat qiling
 """
     
     keyboard = [
@@ -756,7 +756,7 @@ Versiya: 2.0 🚀
 • Statistika
 • 24/7 ishlash
 
-👨‍💻 *Dasturchi:* @YourUsername
+👨‍💻 *Dasturchi:* @Abdulboriy7700
 🌐 *GitHub:* github.com/AbdulboriyOBIDJONOV1234
 📅 *Yaratilgan:* 2024
 

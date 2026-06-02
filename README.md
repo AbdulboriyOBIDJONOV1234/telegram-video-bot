@@ -463,7 +463,7 @@ If you find this bot useful, please:
 
 **Abdulboriy OBIDJANOV**
 - GitHub: [@AbdulboriyOBIDJONOV1234](https://github.com/AbdulboriyOBIDJONOV1234)
-- Telegram: @YourUsername
+- Telegram: [@Abdulboriy7700](https://t.me/Abdulboriy7700)
 
 ---
 
