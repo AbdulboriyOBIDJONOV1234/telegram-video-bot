@@ -1,0 +1,15 @@
+app = "telegram-video-bot"
+primary_region = "iad"
+
+[build]
+
+[env]
+  PORT = "8080"
+
+[processes]
+  app = "python bot.py"
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 256
