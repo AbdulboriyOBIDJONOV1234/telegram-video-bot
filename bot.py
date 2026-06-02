@@ -14,6 +14,8 @@ from telegram.constants import ParseMode
 import yt_dlp
 from dotenv import load_dotenv
 import time
+from threading import Thread
+from flask import Flask
 
 # Load environment variables
 load_dotenv()
@@ -31,6 +33,16 @@ BOT_TOKEN = os.getenv('BOT_TOKEN')
 # Create downloads directory if it doesn't exist
 DOWNLOAD_DIR = 'downloads'
 os.makedirs(DOWNLOAD_DIR, exist_ok=True)
+
+# Flask app for keeping Replit alive
+app = Flask('')
+
+@app.route('/')
+def home():
+    return "Bot is running!"
+
+def run_flask():
+    app.run(host='0.0.0.0', port=8080)
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -339,6 +351,12 @@ def main():
         print("❌ BOT_TOKEN topilmadi!")
         print("Iltimos .env faylida BOT_TOKEN ni sozlang.")
         return
+    
+    # Start Flask server in a separate thread (for Replit keep-alive)
+    flask_thread = Thread(target=run_flask)
+    flask_thread.daemon = True
+    flask_thread.start()
+    logger.info("Flask server started on port 8080 (for Replit keep-alive)")
     
     # Create application
     application = Application.builder().token(BOT_TOKEN).build()
