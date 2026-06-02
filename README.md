@@ -29,14 +29,46 @@ A Telegram bot to download videos from any platform.
 
 ## 🚀 O'rnatish / Installation
 
-### 1. Repositoryni klonlash / Clone the repository
+### Variant 1: Render.com da deploy qilish (24/7 ishlaydi) ⭐ TAVSIYA ETILADI
+
+1. **Render.com ga ro'yxatdan o'ting**
+   - https://render.com ga kiring
+   - GitHub akkaunt bilan ro'yxatdan o'ting
+
+2. **New Web Service yarating**
+   - Dashboard → "New" → "Web Service"
+   - GitHub repository ni ulang: `AbdulboriyOBIDJONOV1234/telegram-video-bot`
+
+3. **Sozlamalarni kiriting**
+   - **Name**: `telegram-video-bot` (yoki istalgan nom)
+   - **Region**: `Oregon (US West)` yoki `Frankfurt (EU Central)`
+   - **Branch**: `main`
+   - **Runtime**: `Python 3`
+   - **Build Command**: `pip install -r requirements.txt && apt-get update && apt-get install -y ffmpeg`
+   - **Start Command**: `python bot.py`
+   - **Instance Type**: `Free`
+
+4. **Environment Variables (BOT_TOKEN)**
+   - "Add Environment Variable" tugmasini bosing
+   - **Key**: `BOT_TOKEN`
+   - **Value**: `sizning_bot_tokeningiz`
+
+5. **Deploy qiling**
+   - "Create Web Service" tugmasini bosing
+   - 5-10 daqiqa kutib, bot deploy bo'ladi! ✅
+
+---
+
+### Variant 2: Mahalliy kompyuterda ishlatish (Local)
+
+#### 1. Repositoryni klonlash / Clone the repository
 
 ```bash
 git clone https://github.com/AbdulboriyOBIDJONOV1234/telegram-video-bot.git
 cd telegram-video-bot
 ```
 
-### 2. Virtual muhitni yaratish (tavsiya etiladi) / Create virtual environment (recommended)
+#### 2. Virtual muhitni yaratish (tavsiya etiladi) / Create virtual environment (recommended)
 
 ```bash
 python -m venv venv
@@ -48,13 +80,26 @@ venv\Scripts\activate
 source venv/bin/activate
 ```
 
-### 3. Kutubxonalarni o'rnatish / Install dependencies
+#### 3. Kutubxonalarni o'rnatish / Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### 4. Bot tokenni sozlash / Configure bot token
+#### 4. FFmpeg o'rnatish / Install FFmpeg
+
+```bash
+# Ubuntu/Debian/Kali Linux
+sudo apt update && sudo apt install ffmpeg -y
+
+# macOS
+brew install ffmpeg
+
+# Windows
+# https://ffmpeg.org/download.html dan yuklab oling
+```
+
+#### 5. Bot tokenni sozlash / Configure bot token
 
 `.env.example` faylidan `.env` fayl yarating va bot tokeningizni kiriting:
 
@@ -76,7 +121,7 @@ BOT_TOKEN=your_bot_token_here
 3. Bot uchun nom va username tanlang / Choose name and username
 4. Token ni `.env` fayliga qo'ying / Add token to `.env` file
 
-### 5. Botni ishga tushirish / Start the bot
+#### 6. Botni ishga tushirish / Start the bot
 
 ```bash
 python bot.py
