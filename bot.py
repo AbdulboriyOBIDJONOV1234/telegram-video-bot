@@ -88,7 +88,7 @@ Muammo bo'lsa, yana urinib ko'ring yoki boshqa havola yuboring.
     )
 
 
-def download_video(url: str, user_id: int) -> dict:
+def download_video(url: str, user_id: int, quality: str = 'medium') -> dict:
     """Download video using yt-dlp and return file info."""
     try:
         # Create user-specific download directory
@@ -98,9 +98,17 @@ def download_video(url: str, user_id: int) -> dict:
         # Output template
         output_template = os.path.join(user_dir, '%(title)s.%(ext)s')
         
-        # yt-dlp options - Updated for better YouTube support
+        # Format selection based on quality
+        if quality == 'low':
+            format_string = 'bestvideo[ext=mp4][height<=360]+bestaudio[ext=m4a]/best[ext=mp4][height<=360]/best[height<=360]/worst'
+        elif quality == 'medium':
+            format_string = 'bestvideo[ext=mp4][height<=480]+bestaudio[ext=m4a]/best[ext=mp4][height<=480]/best[height<=480]/best'
+        else:  # high quality but still limited
+            format_string = 'bestvideo[ext=mp4][height<=720]+bestaudio[ext=m4a]/best[ext=mp4][height<=720]/best[height<=720]/best'
+        
+        # yt-dlp options - Updated for better YouTube support and file size control
         ydl_opts = {
-            'format': 'bestvideo[ext=mp4][height<=720]+bestaudio[ext=m4a]/best[ext=mp4][height<=720]/best[height<=720]/best',
+            'format': format_string,
             'outtmpl': output_template,
             'quiet': False,
             'no_warnings': False,
@@ -153,22 +161,13 @@ def download_video(url: str, user_id: int) -> dict:
             
             file_size = os.path.getsize(filename)
             
-            # Check file size before returning
-            if file_size > 50 * 1024 * 1024:  # 50MB
-                logger.warning(f"File too large: {file_size} bytes")
-                if os.path.exists(filename):
-                    os.remove(filename)
-                return {
-                    'success': False,
-                    'error': 'Video juda katta (50MB dan ko\'p). Telegram cheklovi.'
-                }
-            
             return {
                 'success': True,
                 'file_path': filename,
                 'title': info.get('title', 'Video'),
                 'duration': info.get('duration', 0),
-                'size': file_size
+                'size': file_size,
+                'too_large': file_size > 50 * 1024 * 1024
             }
     
     except yt_dlp.utils.DownloadError as e:
@@ -224,39 +223,71 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     
     try:
-        # Download video
-        result = download_video(url, user_id)
+        # Try to download video with medium quality first
+        result = download_video(url, user_id, quality='medium')
         
         if result['success']:
             file_path = result['file_path']
-            
-            # Check file size
             file_size = result['size']
-            if file_size > 50 * 1024 * 1024:  # 50MB
+            
+            # If file is too large, try with lower quality
+            if result.get('too_large', False):
                 await status_message.edit_text(
-                    "❌ Video juda katta (50MB dan ko'p).\n"
-                    "Telegram cheklovi tufayli yuborib bo'lmaydi."
+                    "⚠️ Video katta. Kichik sifatda yuklanmoqda...",
+                    parse_mode=ParseMode.MARKDOWN
                 )
-                # Clean up
+                
+                # Clean up large file
                 if os.path.exists(file_path):
                     os.remove(file_path)
-                return
+                
+                # Try downloading with low quality
+                result = download_video(url, user_id, quality='low')
+                
+                if not result['success']:
+                    await status_message.edit_text(
+                        f"❌ {result['error']}\n\n"
+                        "Video juda katta. Telegram cheklovi: 50MB",
+                        parse_mode=ParseMode.MARKDOWN
+                    )
+                    return
+                
+                file_path = result['file_path']
+                file_size = result['size']
+                
+                # Check again
+                if file_size > 50 * 1024 * 1024:
+                    await status_message.edit_text(
+                        "❌ Video juda katta (50MB dan ko'p).\n"
+                        "Kichik sifatda ham Telegram cheklovidan katta.\n\n"
+                        "💡 Tavsiya: Qisqaroq videolarni yuboring.",
+                        parse_mode=ParseMode.MARKDOWN
+                    )
+                    # Clean up
+                    if os.path.exists(file_path):
+                        os.remove(file_path)
+                    return
             
             # Update status
+            file_size_mb = file_size / (1024 * 1024)
             await status_message.edit_text(
-                "📤 Video yuklanmoqda...",
+                f"📤 Video yuborilmoqda... ({file_size_mb:.1f} MB)",
                 parse_mode=ParseMode.MARKDOWN
             )
             
             # Send video to user
             with open(file_path, 'rb') as video_file:
+                quality_note = ""
+                if result.get('too_large', False):
+                    quality_note = "\n\n⚠️ Video katta bo'lgani uchun sifat pasaytirildi"
+                
                 await update.message.reply_video(
                     video=video_file,
-                    caption=f"✅ *{result['title']}*",
+                    caption=f"✅ *{result['title']}*\n📦 Hajm: {file_size_mb:.1f} MB{quality_note}",
                     parse_mode=ParseMode.MARKDOWN,
                     supports_streaming=True,
-                    read_timeout=60,
-                    write_timeout=60
+                    read_timeout=120,
+                    write_timeout=120
                 )
             
             # Delete status message
