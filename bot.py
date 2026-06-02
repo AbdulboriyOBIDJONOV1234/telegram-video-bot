@@ -98,45 +98,109 @@ def download_video(url: str, user_id: int) -> dict:
         # Output template
         output_template = os.path.join(user_dir, '%(title)s.%(ext)s')
         
-        # yt-dlp options
+        # yt-dlp options - Updated for better YouTube support
         ydl_opts = {
-            'format': 'best[ext=mp4]/best',  # Prefer MP4 format
+            'format': 'bestvideo[ext=mp4][height<=720]+bestaudio[ext=m4a]/best[ext=mp4][height<=720]/best[height<=720]/best',
             'outtmpl': output_template,
             'quiet': False,
             'no_warnings': False,
             'extract_flat': False,
             'nocheckcertificate': True,
             'ignoreerrors': False,
-            'noplaylist': True,  # Don't download playlists
-            'max_filesize': 50 * 1024 * 1024,  # 50MB max (Telegram limit)
+            'noplaylist': True,
+            'cookiefile': None,
+            'user_agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'extractor_retries': 3,
+            'fragment_retries': 3,
+            'skip_unavailable_fragments': True,
+            'keepvideo': False,
+            'postprocessors': [{
+                'key': 'FFmpegVideoConvertor',
+                'preferedformat': 'mp4',
+            }],
+            'merge_output_format': 'mp4',
+            'prefer_ffmpeg': True,
+            'socket_timeout': 30,
+            'http_chunk_size': 10485760,  # 10MB chunks
         }
         
         # Download video
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            logger.info(f"Downloading from: {url}")
             info = ydl.extract_info(url, download=True)
             
             # Get the downloaded file path
             filename = ydl.prepare_filename(info)
+            
+            # If file has .webm or other extension, convert to .mp4
+            if not filename.endswith('.mp4'):
+                base_name = os.path.splitext(filename)[0]
+                new_filename = base_name + '.mp4'
+                if os.path.exists(new_filename):
+                    filename = new_filename
+                elif os.path.exists(filename):
+                    # File exists but not converted, use as is
+                    pass
+                else:
+                    # Try to find any file in the directory
+                    for file in os.listdir(user_dir):
+                        if file.startswith(os.path.basename(base_name)):
+                            filename = os.path.join(user_dir, file)
+                            break
+            
+            if not os.path.exists(filename):
+                raise Exception("Downloaded file not found")
+            
+            file_size = os.path.getsize(filename)
+            
+            # Check file size before returning
+            if file_size > 50 * 1024 * 1024:  # 50MB
+                logger.warning(f"File too large: {file_size} bytes")
+                if os.path.exists(filename):
+                    os.remove(filename)
+                return {
+                    'success': False,
+                    'error': 'Video juda katta (50MB dan ko\'p). Telegram cheklovi.'
+                }
             
             return {
                 'success': True,
                 'file_path': filename,
                 'title': info.get('title', 'Video'),
                 'duration': info.get('duration', 0),
-                'size': os.path.getsize(filename) if os.path.exists(filename) else 0
+                'size': file_size
             }
     
     except yt_dlp.utils.DownloadError as e:
-        logger.error(f"Download error: {e}")
-        return {
-            'success': False,
-            'error': 'Video yuklab bo\'lmadi. Havola noto\'g\'ri yoki video mavjud emas.'
-        }
+        error_msg = str(e)
+        logger.error(f"Download error: {error_msg}")
+        
+        # More specific error messages
+        if 'Sign in to confirm' in error_msg or 'age' in error_msg.lower():
+            return {
+                'success': False,
+                'error': 'Video yosh cheklovi bilan himoyalangan. Yuklab bo\'lmaydi.'
+            }
+        elif 'Private video' in error_msg or 'private' in error_msg.lower():
+            return {
+                'success': False,
+                'error': 'Bu video shaxsiy. Yuklab bo\'lmaydi.'
+            }
+        elif 'not available' in error_msg.lower():
+            return {
+                'success': False,
+                'error': 'Video mavjud emas yoki o\'chirilgan.'
+            }
+        else:
+            return {
+                'success': False,
+                'error': f'Video yuklab bo\'lmadi: {error_msg[:100]}'
+            }
     except Exception as e:
-        logger.error(f"Unexpected error: {e}")
+        logger.error(f"Unexpected error: {e}", exc_info=True)
         return {
             'success': False,
-            'error': f'Xatolik yuz berdi: {str(e)}'
+            'error': f'Xatolik yuz berdi: {str(e)[:100]}'
         }
 
 
